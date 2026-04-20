@@ -1,0 +1,581 @@
+[
+  {
+    "account_id": "ACC-001",
+    "company_name": "TechVision Inc",
+    "industry": "Software",
+    "company_size": "Mid-Market",
+    "plan_tier": "growth",
+    "account_manager": "Sarah Chen",
+    "notes": "Strategic account, VP-level champion, high engagement",
+    "usage": {
+      "monthly_active_users": 87,
+      "total_seats": 100,
+      "features_adopted": 18,
+      "total_features": 22,
+      "api_calls_last_30d": 142000,
+      "last_login_days_ago": 1,
+      "usage_trend": "increasing"
+    },
+    "renewal": {
+      "renewal_date": "2025-08-15",
+      "contract_value": 72000,
+      "auto_renew": false
+    },
+    "support_tickets": [
+      {
+        "id": "TKT-1001",
+        "subject": "API rate limit increase request",
+        "status": "closed",
+        "priority": "medium",
+        "created_at": "2025-03-10T09:00:00Z",
+        "resolved_at": "2025-03-12T14:00:00Z",
+        "satisfaction_score": 5
+      },
+      {
+        "id": "TKT-1002",
+        "subject": "Custom webhook configuration",
+        "status": "closed",
+        "priority": "low",
+        "created_at": "2025-04-01T11:00:00Z",
+        "resolved_at": "2025-04-02T10:00:00Z",
+        "satisfaction_score": 4
+      }
+    ],
+    "expansion_signals": [
+      {
+        "signal_type": "new_department",
+        "description": "Marketing team expressed interest in expanding to 40 additional seats",
+        "strength": "strong"
+      },
+      {
+        "signal_type": "feature_request",
+        "description": "Requested enterprise SSO and audit logging — Enterprise-tier features",
+        "strength": "moderate"
+      }
+    ]
+  },
+  {
+    "account_id": "ACC-002",
+    "company_name": "RetailEdge Co",
+    "industry": "Retail",
+    "company_size": "SMB",
+    "plan_tier": "starter",
+    "account_manager": "James Patel",
+    "notes": "Renewal in 30 days, usage has been declining since Feb",
+    "usage": {
+      "monthly_active_users": 6,
+      "total_seats": 20,
+      "features_adopted": 3,
+      "total_features": 22,
+      "api_calls_last_30d": 1800,
+      "last_login_days_ago": 18,
+      "usage_trend": "declining"
+    },
+    "renewal": {
+      "renewal_date": "2025-05-20",
+      "contract_value": 9600,
+      "auto_renew": false
+    },
+    "support_tickets": [
+      {
+        "id": "TKT-2001",
+        "subject": "Unable to import CSV data",
+        "status": "open",
+        "priority": "high",
+        "created_at": "2025-04-08T08:00:00Z",
+        "resolved_at": null,
+        "satisfaction_score": null
+      },
+      {
+        "id": "TKT-2002",
+        "subject": "Dashboard not loading",
+        "status": "open",
+        "priority": "critical",
+        "created_at": "2025-04-10T10:00:00Z",
+        "resolved_at": null,
+        "satisfaction_score": null
+      },
+      {
+        "id": "TKT-2003",
+        "subject": "Feature request: export to PDF",
+        "status": "closed",
+        "priority": "low",
+        "created_at": "2025-02-15T11:00:00Z",
+        "resolved_at": "2025-02-20T09:00:00Z",
+        "satisfaction_score": 2
+      }
+    ],
+    "expansion_signals": []
+  },
+  {
+    "account_id": "ACC-003",
+    "company_name": "HealthBridge Systems",
+    "industry": "Healthcare",
+    "company_size": "Enterprise",
+    "plan_tier": "enterprise",
+    "account_manager": "Maria Rodriguez",
+    "notes": "Compliance-sensitive. Low platform adoption post-migration. Key stakeholder left company.",
+    "usage": {
+      "monthly_active_users": 45,
+      "total_seats": 300,
+      "features_adopted": 5,
+      "total_features": 22,
+      "api_calls_last_30d": 12000,
+      "last_login_days_ago": 22,
+      "usage_trend": "declining"
+    },
+    "renewal": {
+      "renewal_date": "2025-07-01",
+      "contract_value": 240000,
+      "auto_renew": false
+    },
+    "support_tickets": [
+      {
+        "id": "TKT-3001",
+        "subject": "HIPAA audit log export failing",
+        "status": "open",
+        "priority": "critical",
+        "created_at": "2025-04-05T07:00:00Z",
+        "resolved_at": null,
+        "satisfaction_score": null
+      },
+      {
+        "id": "TKT-3002",
+        "subject": "SSO integration broken after update",
+        "status": "open",
+        "priority": "critical",
+        "created_at": "2025-04-09T09:00:00Z",
+        "resolved_at": null,
+        "satisfaction_score": null
+      },
+      {
+        "id": "TKT-3003",
+        "subject": "User provisioning via SCIM not syncing",
+        "status": "pending",
+        "priority": "high",
+        "created_at": "2025-04-11T08:00:00Z",
+        "resolved_at": null,
+        "satisfaction_score": null
+      }
+    ],
+    "expansion_signals": []
+  },
+  {
+    "account_id": "ACC-004",
+    "company_name": "StartupXYZ",
+    "industry": "Fintech",
+    "company_size": "SMB",
+    "plan_tier": "growth",
+    "account_manager": "Sarah Chen",
+    "notes": "Fast-growing startup. Series B funded. Heavy API users.",
+    "usage": {
+      "monthly_active_users": 28,
+      "total_seats": 30,
+      "features_adopted": 16,
+      "total_features": 22,
+      "api_calls_last_30d": 380000,
+      "last_login_days_ago": 0,
+      "usage_trend": "increasing"
+    },
+    "renewal": {
+      "renewal_date": "2025-11-01",
+      "contract_value": 36000,
+      "auto_renew": true
+    },
+    "support_tickets": [
+      {
+        "id": "TKT-4001",
+        "subject": "Webhook retry configuration",
+        "status": "closed",
+        "priority": "medium",
+        "created_at": "2025-03-20T10:00:00Z",
+        "resolved_at": "2025-03-21T11:00:00Z",
+        "satisfaction_score": 5
+      }
+    ],
+    "expansion_signals": [
+      {
+        "signal_type": "high_usage",
+        "description": "API calls approaching plan limit; expect 3x growth in next quarter",
+        "strength": "strong"
+      },
+      {
+        "signal_type": "hiring",
+        "description": "Job postings show 15 new engineering roles — seat demand incoming",
+        "strength": "moderate"
+      }
+    ]
+  },
+  {
+    "account_id": "ACC-005",
+    "company_name": "MegaBank Financial",
+    "industry": "Finance",
+    "company_size": "Enterprise",
+    "plan_tier": "enterprise",
+    "account_manager": "David Kim",
+    "notes": "Rock-solid account. Annual review next month. Potential multi-year.",
+    "usage": {
+      "monthly_active_users": 210,
+      "total_seats": 250,
+      "features_adopted": 17,
+      "total_features": 22,
+      "api_calls_last_30d": 95000,
+      "last_login_days_ago": 2,
+      "usage_trend": "stable"
+    },
+    "renewal": {
+      "renewal_date": "2025-06-30",
+      "contract_value": 180000,
+      "auto_renew": false
+    },
+    "support_tickets": [
+      {
+        "id": "TKT-5001",
+        "subject": "SOC2 report request",
+        "status": "closed",
+        "priority": "medium",
+        "created_at": "2025-02-10T09:00:00Z",
+        "resolved_at": "2025-02-12T14:00:00Z",
+        "satisfaction_score": 5
+      },
+      {
+        "id": "TKT-5002",
+        "subject": "Custom role permissions for compliance team",
+        "status": "closed",
+        "priority": "medium",
+        "created_at": "2025-03-05T11:00:00Z",
+        "resolved_at": "2025-03-07T10:00:00Z",
+        "satisfaction_score": 4
+      }
+    ],
+    "expansion_signals": [
+      {
+        "signal_type": "new_department",
+        "description": "Risk management team wants to onboard — potential 50 additional seats",
+        "strength": "strong"
+      },
+      {
+        "signal_type": "referral",
+        "description": "CFO mentioned us to two peer banks at industry conference",
+        "strength": "strong"
+      }
+    ]
+  },
+  {
+    "account_id": "ACC-006",
+    "company_name": "EduLearn Platform",
+    "industry": "Education",
+    "company_size": "SMB",
+    "plan_tier": "starter",
+    "account_manager": "James Patel",
+    "notes": "Budget-constrained. Low adoption. CSM check-in overdue.",
+    "usage": {
+      "monthly_active_users": 4,
+      "total_seats": 15,
+      "features_adopted": 2,
+      "total_features": 22,
+      "api_calls_last_30d": 800,
+      "last_login_days_ago": 31,
+      "usage_trend": "declining"
+    },
+    "renewal": {
+      "renewal_date": "2025-06-01",
+      "contract_value": 5400,
+      "auto_renew": false
+    },
+    "support_tickets": [
+      {
+        "id": "TKT-6001",
+        "subject": "How to set up bulk user import",
+        "status": "closed",
+        "priority": "low",
+        "created_at": "2025-01-15T12:00:00Z",
+        "resolved_at": "2025-01-16T10:00:00Z",
+        "satisfaction_score": 3
+      }
+    ],
+    "expansion_signals": []
+  },
+  {
+    "account_id": "ACC-007",
+    "company_name": "LogisticsPro Global",
+    "industry": "Logistics",
+    "company_size": "Mid-Market",
+    "plan_tier": "growth",
+    "account_manager": "Maria Rodriguez",
+    "notes": "Operations team loves the product. Close to seat capacity every month.",
+    "usage": {
+      "monthly_active_users": 95,
+      "total_seats": 100,
+      "features_adopted": 19,
+      "total_features": 22,
+      "api_calls_last_30d": 210000,
+      "last_login_days_ago": 1,
+      "usage_trend": "increasing"
+    },
+    "renewal": {
+      "renewal_date": "2025-09-15",
+      "contract_value": 84000,
+      "auto_renew": true
+    },
+    "support_tickets": [
+      {
+        "id": "TKT-7001",
+        "subject": "Bulk operations performance slow for large datasets",
+        "status": "pending",
+        "priority": "medium",
+        "created_at": "2025-04-12T08:00:00Z",
+        "resolved_at": null,
+        "satisfaction_score": null
+      }
+    ],
+    "expansion_signals": [
+      {
+        "signal_type": "high_usage",
+        "description": "95% seat utilisation — operations director asked about volume discounts",
+        "strength": "strong"
+      },
+      {
+        "signal_type": "new_department",
+        "description": "Finance department exploring using the platform for invoice management",
+        "strength": "moderate"
+      }
+    ]
+  },
+  {
+    "account_id": "ACC-008",
+    "company_name": "MediaGroup Digital",
+    "industry": "Media",
+    "company_size": "Mid-Market",
+    "plan_tier": "growth",
+    "account_manager": "David Kim",
+    "notes": "Key contact changed jobs. New stakeholder not yet onboarded. Ticket backlog building.",
+    "usage": {
+      "monthly_active_users": 22,
+      "total_seats": 60,
+      "features_adopted": 7,
+      "total_features": 22,
+      "api_calls_last_30d": 8500,
+      "last_login_days_ago": 12,
+      "usage_trend": "declining"
+    },
+    "renewal": {
+      "renewal_date": "2025-08-01",
+      "contract_value": 43200,
+      "auto_renew": false
+    },
+    "support_tickets": [
+      {
+        "id": "TKT-8001",
+        "subject": "Unable to access admin panel",
+        "status": "open",
+        "priority": "high",
+        "created_at": "2025-04-08T14:00:00Z",
+        "resolved_at": null,
+        "satisfaction_score": null
+      },
+      {
+        "id": "TKT-8002",
+        "subject": "Data export format changed unexpectedly",
+        "status": "open",
+        "priority": "high",
+        "created_at": "2025-04-10T09:00:00Z",
+        "resolved_at": null,
+        "satisfaction_score": null
+      },
+      {
+        "id": "TKT-8003",
+        "subject": "Training session for new team",
+        "status": "closed",
+        "priority": "low",
+        "created_at": "2025-03-01T10:00:00Z",
+        "resolved_at": "2025-03-05T11:00:00Z",
+        "satisfaction_score": 3
+      }
+    ],
+    "expansion_signals": []
+  },
+  {
+    "account_id": "ACC-009",
+    "company_name": "GreenEnergy Corp",
+    "industry": "Energy",
+    "company_size": "Mid-Market",
+    "plan_tier": "growth",
+    "account_manager": "Sarah Chen",
+    "notes": "New customer — went live 45 days ago. Onboarding tracking well.",
+    "usage": {
+      "monthly_active_users": 38,
+      "total_seats": 50,
+      "features_adopted": 10,
+      "total_features": 22,
+      "api_calls_last_30d": 28000,
+      "last_login_days_ago": 3,
+      "usage_trend": "increasing"
+    },
+    "renewal": {
+      "renewal_date": "2026-04-01",
+      "contract_value": 42000,
+      "auto_renew": false
+    },
+    "support_tickets": [
+      {
+        "id": "TKT-9001",
+        "subject": "Onboarding question: custom fields setup",
+        "status": "closed",
+        "priority": "low",
+        "created_at": "2025-03-20T09:00:00Z",
+        "resolved_at": "2025-03-21T10:00:00Z",
+        "satisfaction_score": 5
+      }
+    ],
+    "expansion_signals": [
+      {
+        "signal_type": "hiring",
+        "description": "Company growing fast — 20 new hires announced for Q3",
+        "strength": "moderate"
+      }
+    ]
+  },
+  {
+    "account_id": "ACC-010",
+    "company_name": "InsureTech Ltd",
+    "industry": "Insurance",
+    "company_size": "Enterprise",
+    "plan_tier": "enterprise",
+    "account_manager": "Maria Rodriguez",
+    "notes": "High-value flagship account. NPS of 9. CFO sponsor is a champion.",
+    "usage": {
+      "monthly_active_users": 180,
+      "total_seats": 200,
+      "features_adopted": 21,
+      "total_features": 22,
+      "api_calls_last_30d": 310000,
+      "last_login_days_ago": 1,
+      "usage_trend": "stable"
+    },
+    "renewal": {
+      "renewal_date": "2025-07-31",
+      "contract_value": 210000,
+      "auto_renew": false
+    },
+    "support_tickets": [
+      {
+        "id": "TKT-10001",
+        "subject": "Custom SLA report template",
+        "status": "closed",
+        "priority": "medium",
+        "created_at": "2025-03-15T10:00:00Z",
+        "resolved_at": "2025-03-17T11:00:00Z",
+        "satisfaction_score": 5
+      }
+    ],
+    "expansion_signals": [
+      {
+        "signal_type": "referral",
+        "description": "CFO sponsor actively referring us to 3 other insurance companies",
+        "strength": "strong"
+      },
+      {
+        "signal_type": "new_department",
+        "description": "Claims processing team wants separate workspace — 80 additional seats",
+        "strength": "strong"
+      }
+    ]
+  },
+  {
+    "account_id": "ACC-011",
+    "company_name": "FashionBrand Studio",
+    "industry": "E-commerce",
+    "company_size": "SMB",
+    "plan_tier": "starter",
+    "account_manager": "James Patel",
+    "notes": "Seasonal business — usage spikes around collection launches.",
+    "usage": {
+      "monthly_active_users": 9,
+      "total_seats": 18,
+      "features_adopted": 8,
+      "total_features": 22,
+      "api_calls_last_30d": 14000,
+      "last_login_days_ago": 5,
+      "usage_trend": "stable"
+    },
+    "renewal": {
+      "renewal_date": "2025-10-01",
+      "contract_value": 7200,
+      "auto_renew": true
+    },
+    "support_tickets": [
+      {
+        "id": "TKT-11001",
+        "subject": "Image upload size limit",
+        "status": "closed",
+        "priority": "medium",
+        "created_at": "2025-03-22T12:00:00Z",
+        "resolved_at": "2025-03-23T14:00:00Z",
+        "satisfaction_score": 4
+      }
+    ],
+    "expansion_signals": [
+      {
+        "signal_type": "feature_request",
+        "description": "Requesting advanced analytics dashboard — Growth-tier feature",
+        "strength": "moderate"
+      }
+    ]
+  },
+  {
+    "account_id": "ACC-012",
+    "company_name": "ConsultFirm Partners",
+    "industry": "Professional Services",
+    "company_size": "Mid-Market",
+    "plan_tier": "growth",
+    "account_manager": "David Kim",
+    "notes": "Consulting firm with 8 client sub-accounts. Champions are vocal advocates.",
+    "usage": {
+      "monthly_active_users": 62,
+      "total_seats": 75,
+      "features_adopted": 15,
+      "total_features": 22,
+      "api_calls_last_30d": 67000,
+      "last_login_days_ago": 2,
+      "usage_trend": "stable"
+    },
+    "renewal": {
+      "renewal_date": "2025-12-15",
+      "contract_value": 54000,
+      "auto_renew": false
+    },
+    "support_tickets": [
+      {
+        "id": "TKT-12001",
+        "subject": "Sub-account billing consolidation",
+        "status": "closed",
+        "priority": "medium",
+        "created_at": "2025-02-20T09:00:00Z",
+        "resolved_at": "2025-02-22T11:00:00Z",
+        "satisfaction_score": 4
+      },
+      {
+        "id": "TKT-12002",
+        "subject": "API docs for client integration",
+        "status": "closed",
+        "priority": "low",
+        "created_at": "2025-03-10T10:00:00Z",
+        "resolved_at": "2025-03-11T14:00:00Z",
+        "satisfaction_score": 5
+      }
+    ],
+    "expansion_signals": [
+      {
+        "signal_type": "referral",
+        "description": "Two managing partners actively recommending us to their enterprise clients",
+        "strength": "strong"
+      },
+      {
+        "signal_type": "new_department",
+        "description": "Exploring white-label partner program for client deployments",
+        "strength": "moderate"
+      }
+    ]
+  }
+]
