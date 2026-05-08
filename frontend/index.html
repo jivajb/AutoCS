@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoCS Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 0.8s linear infinite; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    .fade-up { animation: fadeUp 0.18s ease; }
+    @keyframes slideIn { from { opacity:0; transform:translateX(12px); } to { opacity:1; transform:translateX(0); } }
+    .slide-in { animation: slideIn 0.2s ease; }
+    .tab-active { border-bottom: 2px solid #2563eb; color: #2563eb; }
+    .tab-inactive { border-bottom: 2px solid transparent; color: #6b7280; }
+    .tab-inactive:hover { color: #374151; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+  </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-gray-900">
+
+<!-- ── Header ─────────────────────────────────────────────────────────────── -->
+<header class="bg-white border-b border-gray-200 sticky top-0 z-30">
+  <div class="max-w-7xl mx-auto px-6 flex items-center justify-between h-14">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm select-none">AC</div>
+      <div>
+        <div class="font-semibold text-sm leading-tight">AutoCS</div>
+        <div class="text-xs text-gray-400 leading-tight">Multi-Agent Customer Success</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 text-xs text-gray-500">
+      <span id="status-dot" class="w-2 h-2 rounded-full bg-gray-300 inline-block"></span>
+      <span id="status-text">Connecting…</span>
+    </div>
+  </div>
+</header>
+
+<!-- ── Tabs ───────────────────────────────────────────────────────────────── -->
+<div class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-6">
+    <nav class="flex gap-6 -mb-px text-sm font-medium">
+      <button id="tab-accounts" onclick="switchTab('accounts')" class="tab-active py-3">Accounts</button>
+      <button id="tab-runs"     onclick="switchTab('runs')"     class="tab-inactive py-3">Workflow Runs</button>
+      <button id="tab-reviews"  onclick="switchTab('reviews')"  class="tab-inactive py-3 flex items-center gap-1.5">
+        Reviews
+        <span id="review-badge" class="hidden bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none"></span>
+      </button>
+    </nav>
+  </div>
+</div>
+
+<!-- ── Main ───────────────────────────────────────────────────────────────── -->
+<main class="max-w-7xl mx-auto px-6 py-8">
+  <div id="pane-accounts"></div>
+  <div id="pane-runs"     class="hidden"></div>
+  <div id="pane-reviews"  class="hidden"></div>
+</main>
+
+<!-- ── Run-detail slide-over ─────────────────────────────────────────────── -->
+<div id="overlay" class="hidden fixed inset-0 bg-black/40 z-40" onclick="closeModal()"></div>
+<aside id="modal" class="hidden fixed top-0 right-0 h-full w-full max-w-xl bg-white shadow-2xl z-50 overflow-y-auto flex flex-col">
+  <div class="flex items-center justify-between p-5 border-b border-gray-100">
+    <h2 class="font-semibold text-gray-800" id="modal-title">Run Detail</h2>
+    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
+  </div>
+  <div id="modal-body" class="p-5 flex-1"></div>
+</aside>
+
+<!-- ── Toast ─────────────────────────────────────────────────────────────── -->
+<div id="toast" class="hidden fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium max-w-xs slide-in"></div>
+
+<!-- ── Script ─────────────────────────────────────────────────────────────── -->
+<script>
+const API = 'http://localhost:8000';
+
+// ── State ──────────────────────────────────────────────────────────────────
+let currentTab = 'accounts';
+let accounts   = [];
+let runs       = [];
+let reviews    = [];
+let running    = {};   // accountId → true while workflow in-flight
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+async function apiFetch(path, opts = {}) {
+  const r = await fetch(API + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ detail: r.statusText }));
+    throw new Error(err.detail || r.statusText);
+  }
+  return r.json();
+}
+
+function toast(msg, ok = true) {
+  const el = document.getElementById('toast');
+  el.className = `fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium max-w-xs slide-in ${ok ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 3500);
+}
+
+function statusDot(online) {
+  const dot  = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  dot.className  = `w-2 h-2 rounded-full inline-block ${online ? 'bg-green-500' : 'bg-red-400'}`;
+  text.textContent = online ? 'API connected' : 'API unreachable';
+}
+
+function setReviewBadge(count) {
+  const b = document.getElementById('review-badge');
+  if (count > 0) { b.textContent = count; b.classList.remove('hidden'); }
+  else           { b.classList.add('hidden'); }
+}
+
+// ── Badges / colours ───────────────────────────────────────────────────────
+
+const TIER_CLS  = { starter:'bg-gray-100 text-gray-700', growth:'bg-blue-100 text-blue-700', enterprise:'bg-purple-100 text-purple-700' };
+const RISK_CLS  = { low:'bg-green-100 text-green-700', medium:'bg-yellow-100 text-yellow-700', high:'bg-orange-100 text-orange-700', critical:'bg-red-100 text-red-700' };
+const STATUS_CLS = { completed:'bg-green-100 text-green-700', pending_review:'bg-yellow-100 text-yellow-700', failed:'bg-red-100 text-red-700', running:'bg-blue-100 text-blue-700', rejected:'bg-gray-100 text-gray-600' };
+const URGENCY_CLS = { low:'bg-gray-100 text-gray-600', medium:'bg-blue-100 text-blue-700', high:'bg-orange-100 text-orange-700', immediate:'bg-red-100 text-red-700' };
+
+function badge(text, cls) {
+  return `<span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium ${cls}">${text}</span>`;
+}
+
+function riskBadge(r)    { return badge(r,          RISK_CLS[r]    || 'bg-gray-100 text-gray-600'); }
+function statusBadge(s)  { return badge(s.replace('_',' '), STATUS_CLS[s]  || 'bg-gray-100 text-gray-600'); }
+function tierBadge(t)    { return badge(t,          TIER_CLS[t]    || 'bg-gray-100 text-gray-600'); }
+function urgencyBadge(u) { return badge(u,          URGENCY_CLS[u] || 'bg-gray-100 text-gray-600'); }
+
+function healthBar(score) {
+  const pct = Math.round(score);
+  const col = score >= 75 ? '#22c55e' : score >= 55 ? '#eab308' : score >= 35 ? '#f97316' : '#ef4444';
+  return `
+    <div class="flex items-center gap-2">
+      <div class="flex-1 bg-gray-100 rounded-full h-1.5 overflow-hidden">
+        <div style="width:${pct}%;background:${col}" class="h-full rounded-full transition-all"></div>
+      </div>
+      <span class="text-xs font-semibold tabular-nums" style="color:${col}">${pct}</span>
+    </div>`;
+}
+
+function relTime(iso) {
+  const diff = Date.now() - new Date(iso);
+  const s = Math.floor(diff / 1000);
+  if (s < 60)   return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  if (s < 86400) return `${Math.floor(s/3600)}h ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
+function fmtDate(str) { return new Date(str).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function fmtMoney(n) { return '$' + Number(n).toLocaleString(); }
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+
+function switchTab(tab) {
+  currentTab = tab;
+  ['accounts','runs','reviews'].forEach(t => {
+    document.getElementById(`tab-${t}`).className = `${t===tab?'tab-active':'tab-inactive'} py-3 flex items-center gap-1.5`;
+    document.getElementById(`pane-${t}`).classList.toggle('hidden', t !== tab);
+  });
+  if (tab === 'accounts') loadAccounts();
+  if (tab === 'runs')     loadRuns();
+  if (tab === 'reviews')  loadReviews();
+}
+
+// ── Accounts pane ──────────────────────────────────────────────────────────
+
+async function loadAccounts() {
+  const el = document.getElementById('pane-accounts');
+  el.innerHTML = loadingSkeleton(3);
+  try {
+    accounts = await apiFetch('/accounts');
+    statusDot(true);
+    renderAccounts();
+  } catch (e) {
+    statusDot(false);
+    el.innerHTML = errorMsg(e.message);
+  }
+}
+
+function renderAccounts() {
+  const el = document.getElementById('pane-accounts');
+  el.innerHTML = `
+    <div class="mb-5 flex items-center justify-between">
+      <h2 class="text-lg font-semibold">${accounts.length} Accounts</h2>
+      <button onclick="loadAccounts()" class="text-sm text-blue-600 hover:underline">Refresh</button>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 fade-up">
+      ${accounts.map(accountCard).join('')}
+    </div>`;
+}
+
+function accountCard(a) {
+  const isRunning = running[a.account_id];
+  const daysLeft  = Math.round((new Date(a.renewal_date) - Date.now()) / 86400000);
+  const renewalCls = daysLeft < 0 ? 'text-red-500' : daysLeft < 60 ? 'text-orange-500' : 'text-gray-500';
+  return `
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 flex flex-col gap-3 hover:shadow-md transition-shadow">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <div class="font-semibold text-gray-900 leading-tight">${a.company_name}</div>
+          <div class="text-xs text-gray-400 mt-0.5">${a.industry} · ${a.company_size}</div>
+        </div>
+        ${tierBadge(a.plan_tier)}
+      </div>
+      <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-500">
+        <div><span class="text-gray-400">Contract</span><br/><span class="font-medium text-gray-700">${fmtMoney(a.contract_value)}/yr</span></div>
+        <div><span class="text-gray-400">Renewal</span><br/><span class="font-medium ${renewalCls}">${daysLeft < 0 ? 'Overdue' : daysLeft + 'd left'}</span></div>
+        <div class="col-span-2"><span class="text-gray-400">AM</span> <span class="font-medium text-gray-700">${a.account_manager}</span></div>
+      </div>
+      <button
+        onclick="triggerWorkflow('${a.account_id}')"
+        id="run-btn-${a.account_id}"
+        class="mt-1 w-full py-2 rounded-lg text-sm font-medium transition-colors ${isRunning ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'}"
+        ${isRunning ? 'disabled' : ''}>
+        ${isRunning ? spinnerInline() + ' Running…' : 'Run Workflow'}
+      </button>
+    </div>`;
+}
+
+async function triggerWorkflow(accountId) {
+  running[accountId] = true;
+  renderAccounts();
+  try {
+    const result = await apiFetch(`/workflows/run/${accountId}`, { method: 'POST' });
+    const isPending = result.status === 'pending_review';
+    toast(isPending ? `⏸ Paused for review — ${result.run_id.slice(0,8)}` : `✓ Workflow complete`, !isPending);
+    if (isPending) {
+      // refresh review badge
+      const rev = await apiFetch('/reviews/pending').catch(() => []);
+      setReviewBadge(rev.length);
+    }
+    // offer to view run
+    runs = await apiFetch('/runs').catch(() => runs);
+    const run = runs.find(r => r.run_id === result.run_id);
+    if (run) showRunModal(result.run_id);
+  } catch (e) {
+    toast('Error: ' + e.message, false);
+  } finally {
+    delete running[accountId];
+    renderAccounts();
+  }
+}
+
+// ── Runs pane ──────────────────────────────────────────────────────────────
+
+async function loadRuns() {
+  const el = document.getElementById('pane-runs');
+  el.innerHTML = loadingSkeleton(4);
+  try {
+    runs = await apiFetch('/runs');
+    renderRuns();
+  } catch (e) {
+    el.innerHTML = errorMsg(e.message);
+  }
+}
+
+function renderRuns() {
+  const el = document.getElementById('pane-runs');
+  if (!runs.length) { el.innerHTML = emptyState('No workflow runs yet.', 'Run a workflow from the Accounts tab.'); return; }
+  el.innerHTML = `
+    <div class="mb-5 flex items-center justify-between">
+      <h2 class="text-lg font-semibold">${runs.length} Runs</h2>
+      <button onclick="loadRuns()" class="text-sm text-blue-600 hover:underline">Refresh</button>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden fade-up">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-xs text-gray-400 uppercase tracking-wide border-b border-gray-100">
+            <th class="text-left px-5 py-3 font-medium">Account</th>
+            <th class="text-left px-5 py-3 font-medium">Status</th>
+            <th class="text-left px-5 py-3 font-medium">Steps</th>
+            <th class="text-left px-5 py-3 font-medium">Started</th>
+            <th class="px-5 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          ${runs.map(runRow).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function runRow(r) {
+  const acc = accounts.find(a => a.account_id === r.account_id);
+  return `
+    <tr class="hover:bg-gray-50 transition-colors">
+      <td class="px-5 py-3.5">
+        <div class="font-medium text-gray-800">${acc ? acc.company_name : r.account_id}</div>
+        <div class="text-xs text-gray-400">${r.run_id.slice(0,8)}…</div>
+      </td>
+      <td class="px-5 py-3.5">${statusBadge(r.status)}</td>
+      <td class="px-5 py-3.5 text-gray-500">${r.steps}</td>
+      <td class="px-5 py-3.5 text-gray-500">${relTime(r.started_at)}</td>
+      <td class="px-5 py-3.5 text-right">
+        <button onclick="showRunModal('${r.run_id}')" class="text-xs text-blue-600 hover:underline font-medium">Details →</button>
+      </td>
+    </tr>`;
+}
+
+// ── Reviews pane ───────────────────────────────────────────────────────────
+
+async function loadReviews() {
+  const el = document.getElementById('pane-reviews');
+  el.innerHTML = loadingSkeleton(2);
+  try {
+    reviews = await apiFetch('/reviews/pending');
+    setReviewBadge(reviews.length);
+    renderReviews();
+  } catch (e) {
+    el.innerHTML = errorMsg(e.message);
+  }
+}
+
+function renderReviews() {
+  const el = document.getElementById('pane-reviews');
+  if (!reviews.length) { el.innerHTML = emptyState('No pending reviews.', 'All actions were executed automatically.'); return; }
+  el.innerHTML = `
+    <div class="mb-5">
+      <h2 class="text-lg font-semibold">${reviews.length} Pending Review${reviews.length>1?'s':''}</h2>
+      <p class="text-sm text-gray-500 mt-0.5">These workflows require human approval before executing actions.</p>
+    </div>
+    <div class="flex flex-col gap-4 fade-up">
+      ${reviews.map(reviewCard).join('')}
+    </div>`;
+}
+
+function reviewCard(r) {
+  const h = r.health_analysis || {};
+  const d = r.decision || {};
+  const score = h.health_score ?? '—';
+  const risk  = h.churn_risk  || 'unknown';
+  const urgency = d.urgency   || 'medium';
+  const action  = (d.primary_action || '').replace(/_/g,' ');
+  const conf  = d.confidence ? (d.confidence*100).toFixed(0)+'%' : '—';
+  return `
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 fade-up" id="review-card-${r.run_id}">
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <div class="font-semibold text-gray-900">${r.account_id}</div>
+          <div class="text-xs text-gray-400 mt-0.5">Run ${r.run_id.slice(0,8)}… · ${relTime(r.created_at)}</div>
+        </div>
+        <div class="flex gap-2 flex-wrap justify-end">
+          ${riskBadge(risk)}
+          ${urgencyBadge(urgency)}
+        </div>
+      </div>
+
+      ${typeof score === 'number' ? `<div class="mb-3"><div class="text-xs text-gray-400 mb-1">Health score</div>${healthBar(score)}</div>` : ''}
+
+      <div class="bg-gray-50 rounded-lg p-3 mb-4 text-sm">
+        <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">Proposed action</div>
+        <div class="font-medium text-gray-800 capitalize">${action}</div>
+        <div class="text-gray-500 text-xs mt-1">${d.rationale || ''}</div>
+        <div class="text-xs text-gray-400 mt-2">Confidence: <span class="font-medium text-gray-600">${conf}</span></div>
+      </div>
+
+      ${h.risk_factors && h.risk_factors.length ? `
+        <div class="mb-4">
+          <div class="text-xs text-gray-400 mb-1.5">Risk factors</div>
+          <ul class="flex flex-col gap-1">
+            ${h.risk_factors.slice(0,4).map(f=>`<li class="text-xs text-gray-600 flex gap-1.5"><span class="text-red-400 mt-0.5">▸</span>${f}</li>`).join('')}
+          </ul>
+        </div>` : ''}
+
+      <div class="flex gap-2 items-end">
+        <textarea id="note-${r.run_id}" placeholder="Optional note…" rows="1"
+          class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"></textarea>
+        <button onclick="doApprove('${r.run_id}')"
+          class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap">
+          Approve ✓
+        </button>
+        <button onclick="doReject('${r.run_id}')"
+          class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium transition-colors whitespace-nowrap">
+          Reject ✕
+        </button>
+      </div>
+    </div>`;
+}
+
+async function doApprove(runId) {
+  const note = document.getElementById(`note-${runId}`)?.value || '';
+  try {
+    const res = await apiFetch(`/review/${runId}/approve`, { method:'POST', body: JSON.stringify({ reviewer_note: note }) });
+    toast(`✓ Approved — ${res.action_results?.length || 0} action(s) executed`);
+    document.getElementById(`review-card-${runId}`)?.remove();
+    reviews = reviews.filter(r => r.run_id !== runId);
+    setReviewBadge(reviews.length);
+    if (!reviews.length) renderReviews();
+  } catch(e) { toast('Error: ' + e.message, false); }
+}
+
+async function doReject(runId) {
+  const note = document.getElementById(`note-${runId}`)?.value || '';
+  try {
+    await apiFetch(`/review/${runId}/reject`, { method:'POST', body: JSON.stringify({ reviewer_note: note }) });
+    toast('Rejected — no actions executed.', false);
+    document.getElementById(`review-card-${runId}`)?.remove();
+    reviews = reviews.filter(r => r.run_id !== runId);
+    setReviewBadge(reviews.length);
+    if (!reviews.length) renderReviews();
+  } catch(e) { toast('Error: ' + e.message, false); }
+}
+
+// ── Run detail modal ───────────────────────────────────────────────────────
+
+async function showRunModal(runId) {
+  const overlay = document.getElementById('overlay');
+  const modal   = document.getElementById('modal');
+  const body    = document.getElementById('modal-body');
+  const title   = document.getElementById('modal-title');
+  overlay.classList.remove('hidden');
+  modal.classList.remove('hidden');
+  body.innerHTML = `<div class="flex justify-center py-12">${spinnerSvg()}</div>`;
+
+  try {
+    const [run, trace] = await Promise.all([
+      apiFetch(`/runs/${runId}`),
+      apiFetch(`/runs/${runId}/trace`),
+    ]);
+    const acc = accounts.find(a => a.account_id === run.account_id);
+    title.textContent = acc ? acc.company_name : run.account_id;
+    body.innerHTML = runDetailHTML(run, trace);
+  } catch(e) {
+    body.innerHTML = errorMsg(e.message);
+  }
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.add('hidden');
+  document.getElementById('modal').classList.add('hidden');
+}
+
+function runDetailHTML(run, trace) {
+  const h = run.health_analysis  || {};
+  const o = run.opportunities    || {};
+  const d = run.decision         || {};
+  const opps = o.opportunities   || [];
+
+  const sections = [];
+
+  // Status + meta
+  sections.push(`
+    <div class="flex items-center gap-2 mb-5">
+      ${statusBadge(run.status)}
+      <span class="text-xs text-gray-400">${relTime(run.started_at)}</span>
+      ${run.completed_at ? `<span class="text-xs text-gray-400">· ${Math.round((new Date(run.completed_at)-new Date(run.started_at))/1000)}s</span>` : ''}
+    </div>
+    ${run.error ? `<div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-5">
+      <div class="text-xs font-semibold text-red-600 uppercase tracking-wide mb-1">Error</div>
+      <pre class="text-sm text-red-700 whitespace-pre-wrap">${run.error}</pre>
+    </div>` : ''}`);
+
+  // Health
+  if (h.health_score !== undefined) {
+    sections.push(`
+      <div class="mb-5">
+        <div class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Health Analysis</div>
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-gray-700">Health Score</span>
+            ${riskBadge(h.churn_risk || '')}
+          </div>
+          ${healthBar(h.health_score)}
+          <p class="text-sm text-gray-600 mt-3">${h.summary || ''}</p>
+          ${h.risk_factors?.length ? `
+            <div class="mt-3">
+              <div class="text-xs text-gray-400 mb-1">Risk factors</div>
+              ${h.risk_factors.map(f=>`<div class="text-xs text-gray-600 flex gap-1.5 mt-0.5"><span class="text-red-400">▸</span>${f}</div>`).join('')}
+            </div>` : ''}
+          ${h.positive_signals?.length ? `
+            <div class="mt-2">
+              <div class="text-xs text-gray-400 mb-1">Positive signals</div>
+              ${h.positive_signals.map(s=>`<div class="text-xs text-gray-600 flex gap-1.5 mt-0.5"><span class="text-green-500">✓</span>${s}</div>`).join('')}
+            </div>` : ''}
+        </div>
+      </div>`);
+  }
+
+  // Opportunities
+  if (opps.length) {
+    sections.push(`
+      <div class="mb-5">
+        <div class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Expansion Opportunities</div>
+        <div class="flex flex-col gap-2">
+          ${opps.map(op => `
+            <div class="bg-blue-50 rounded-lg p-3">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <div class="text-sm font-medium text-blue-800 capitalize">${op.type.replace(/_/g,' ')}</div>
+                  <div class="text-xs text-blue-600 mt-0.5">${op.description}</div>
+                </div>
+                <div class="text-right shrink-0">
+                  <div class="text-sm font-semibold text-blue-800">${fmtMoney(op.estimated_value)}</div>
+                  <div class="text-xs text-blue-500">${(op.confidence*100).toFixed(0)}% conf.</div>
+                </div>
+              </div>
+            </div>`).join('')}
+          <div class="text-xs text-gray-500 text-right">Total potential: <span class="font-semibold">${fmtMoney(o.total_expansion_potential||0)}</span></div>
+        </div>
+      </div>`);
+  }
+
+  // Decision
+  if (d.primary_action) {
+    sections.push(`
+      <div class="mb-5">
+        <div class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Decision</div>
+        <div class="bg-gray-50 rounded-lg p-4">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="font-medium text-gray-800 capitalize">${d.primary_action.replace(/_/g,' ')}</span>
+            ${urgencyBadge(d.urgency||'')}
+            <span class="ml-auto text-xs text-gray-500">Confidence: <b>${((d.confidence||0)*100).toFixed(0)}%</b></span>
+          </div>
+          <p class="text-sm text-gray-600">${d.rationale||''}</p>
+          ${d.secondary_actions?.length ? `<div class="text-xs text-gray-400 mt-2">Also: ${d.secondary_actions.map(a=>a.replace(/_/g,' ')).join(', ')}</div>` : ''}
+        </div>
+      </div>`);
+  }
+
+  // Actions executed
+  if (run.action_results?.length) {
+    sections.push(`
+      <div class="mb-5">
+        <div class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Actions Executed</div>
+        <div class="flex flex-col gap-2">
+          ${run.action_results.map(ar => `
+            <div class="border border-gray-100 rounded-lg p-3">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-sm font-medium capitalize text-gray-700">${ar.action_type.replace(/_/g,' ')}</span>
+                <span class="text-xs ${ar.status==='simulated'?'text-green-600':ar.status==='failed'?'text-red-500':'text-gray-500'}">${ar.status}</span>
+              </div>
+              <pre class="text-xs text-gray-500 bg-gray-50 rounded p-2 mt-1 overflow-x-auto">${JSON.stringify(ar.result, null, 2)}</pre>
+            </div>`).join('')}
+        </div>
+      </div>`);
+  }
+
+  // Trace
+  if (trace?.length) {
+    sections.push(`
+      <div class="mb-2">
+        <div class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Execution Trace</div>
+        <ol class="relative border-l border-gray-200 ml-2">
+          ${trace.map((step,i) => `
+            <li class="mb-4 ml-5">
+              <span class="absolute -left-2 w-4 h-4 rounded-full bg-blue-100 border-2 border-blue-300 flex items-center justify-center text-xs text-blue-600 font-bold">${i+1}</span>
+              <div class="font-medium text-sm text-gray-800">${step.agent} <span class="font-normal text-gray-400">·</span> <span class="font-normal text-gray-500">${step.step_name.replace(/_/g,' ')}</span></div>
+              <div class="text-xs text-gray-500 mt-0.5">${step.output_summary}</div>
+              <div class="text-xs text-gray-400 mt-0.5">${step.duration_ms}ms</div>
+            </li>`).join('')}
+        </ol>
+      </div>`);
+  }
+
+  return sections.join('');
+}
+
+// ── Skeleton / empty / error ────────────────────────────────────────────────
+
+function loadingSkeleton(n) {
+  return `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">${Array(n).fill(`
+    <div class="bg-white rounded-xl border border-gray-100 p-5 animate-pulse">
+      <div class="h-4 bg-gray-100 rounded w-2/3 mb-2"></div>
+      <div class="h-3 bg-gray-100 rounded w-1/2 mb-4"></div>
+      <div class="h-3 bg-gray-100 rounded w-full mb-1"></div>
+      <div class="h-3 bg-gray-100 rounded w-3/4 mb-4"></div>
+      <div class="h-8 bg-gray-100 rounded"></div>
+    </div>`).join('')}</div>`;
+}
+
+function emptyState(heading, sub) {
+  return `<div class="text-center py-20 text-gray-400"><div class="text-4xl mb-3">○</div><div class="font-medium">${heading}</div><div class="text-sm mt-1">${sub}</div></div>`;
+}
+
+function errorMsg(msg) {
+  return `<div class="bg-red-50 text-red-700 rounded-lg p-4 text-sm">Error: ${msg}</div>`;
+}
+
+function spinnerInline() {
+  return `<svg class="spinner inline w-3.5 h-3.5 mr-1 -mt-0.5" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>`;
+}
+
+function spinnerSvg() {
+  return `<svg class="spinner w-8 h-8 text-blue-400" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="30 70" stroke-linecap="round"/></svg>`;
+}
+
+// ── Boot ────────────────────────────────────────────────────────────────────
+
+async function boot() {
+  // Check API health
+  try {
+    await apiFetch('/health');
+    statusDot(true);
+  } catch {
+    statusDot(false);
+  }
+
+  // Load initial data
+  loadAccounts();
+
+  // Refresh review badge silently
+  try {
+    const rev = await apiFetch('/reviews/pending');
+    setReviewBadge(rev.length);
+  } catch {}
+}
+
+boot();
+</script>
+</body>
+</html>
